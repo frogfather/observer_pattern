@@ -20,8 +20,8 @@ type
     property name: string read fName write fName;
   end;
 
-  { TSubject }
-  TSubject = class
+  { TMySubject }
+  TMySubject = class
   private
   fController: TObject;
   fObservers: TObjectList;
@@ -32,23 +32,6 @@ type
   procedure Notify;
   end;
 
-  { TClockTimer}
-   TClockTimer = class
-   private
-     fTimer: TTimer;
-     fInternalTime: TDateTime;
-     fSubject: TSubject;
-     procedure Tick(Sender: TObject);
-   public
-     constructor Create;
-     destructor Destroy; override;
-     function GetTime: TDateTime;
-     property Subject: TSubject read fSubject;
-   end;
-
-  { TObserverList }
-  TObserverList = array of TMyObserver;
-
   { TForm1 }
 
   TForm1 = class(TForm)
@@ -58,12 +41,6 @@ type
     eItem: TEdit;
     lbObserved: TListBox;
     lbLog: TListBox;
-    Timer1: TTimer;
-    procedure bAddClick(Sender: TObject);
-    procedure bAddObserverClick(Sender: TObject);
-    procedure bRemoveObserverClick(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
-    procedure FormShow(Sender: TObject);
   private
 
   public
@@ -72,7 +49,6 @@ type
 
 var
   Form1: TForm1;
-  ObserverList: TObserverlist;
 
 implementation
 
@@ -104,15 +80,15 @@ begin
   end;
 end;
 
-{ TSubject }
+{ TMySubject }
 
-constructor TSubject.Create(const Controller: TObject);
+constructor TMySubject.Create(const Controller: TObject);
 begin
   inherited Create;
     fController := Controller;
 end;
 
-procedure TSubject.Attach(const Observer: TMyObserver);
+procedure TMySubject.Attach(const Observer: TMyObserver);
 begin
 if fObservers = nil then
 fObservers := TObjectList.Create;
@@ -120,7 +96,7 @@ if fObservers.IndexOf(Observer) < 0 then
 fObservers.Add(Observer);
 end;
 
-procedure TSubject.Detach(const Observer: TMyObserver);
+procedure TMySubject.Detach(const Observer: TMyObserver);
 begin
 if fObservers <> nil then
 begin
@@ -133,7 +109,7 @@ end;
 end;
 end;
 
-procedure TSubject.Notify;
+procedure TMySubject.Notify;
 var
 i: Integer;
 begin
@@ -142,97 +118,7 @@ for i := 0 to Pred(fObservers.Count) do
 TMyObserver(fObservers[i]).Update(fController);
 end;
 
-{ TClockTimer }
-
-constructor TClockTimer.Create;
-  begin
-    inherited Create;
-    fTimer := TTimer.Create(nil);
-    fTimer.Interval := 1000;
-    fTimer.OnTimer := Tick;
-    fTimer.Enabled := True;
-    fSubject := TSubject.Create(self);
-  end;
-
-destructor TClockTimer.Destroy;
-begin
-fSubject.Free;
-fTimer.Enabled := False;
-fTimer.Free;
-inherited Destroy;
-end;
-
-function TClockTimer.GetTime: TDateTime;
-begin
-Result := fInternalTime;
-end;
-
-procedure TClockTimer.Tick(Sender: TObject);
-begin
-fInternalTime := Now;
-fSubject.Notify;
-end;
-
-
-
 { TForm1 }
-
-procedure TForm1.bAddClick(Sender: TObject);
-begin
-  if (lbObserved.items.indexOf(eItem.text) = -1) then
-  begin
-  lbObserved.items.add(eItem.text);
-  eItem.Clear;
-  end;
-
-end;
-
-procedure TForm1.bAddObserverClick(Sender: TObject);
-var
-  oObserver: TMyObserver;
-  intf: IFPObserved;
-begin
- oObserver:=TMyObserver.Create;
- oObserver.name:='Observer '+inttostr(length(observerlist)+1);
- { attach observer }
-  if Supports(lbObserved.items, IFPObserved, intf) then
-  begin
-    lbLog.items.add('adding observer '+oObserver.name);
-    intf.FPOAttachObserver(oObserver);
-    setLength(ObserverList, length(ObserverList) + 1);
-    ObserverList[length(ObserverList)-1] := oObserver;
-    lbLog.Items.Add('There are now '+inttostr(length(observerlist))+' observers ');
-  end else
-  begin
-    lbLog.items.add(lbObserved.ClassName+' does not support IFPObserved');
-  end;
-
-
-end;
-
-procedure TForm1.bRemoveObserverClick(Sender: TObject);
-var
-  oObserver: TMyObserver;
-begin
-  if (length(ObserverList) > 0 ) then
-    begin
-      oObserver:=ObserverList[length(ObserverList)-1];
-      lbLog.items.add('removing observer '+oObserver.name);
-      lbObserved.items.FPODetachObserver(oObserver);
-      setLength(ObserverList, length(ObserverList) - 1);
-      lbLog.Items.Add('There are now '+inttostr(length(observerlist))+' observers ');
-    end;
-end;
-
-procedure TForm1.FormDestroy(Sender: TObject);
-begin
-  setLength(ObserverList, 0);
-end;
-
-procedure TForm1.FormShow(Sender: TObject);
-begin
-  setLength(ObserverList, 0);
-end;
 
 end.
 
