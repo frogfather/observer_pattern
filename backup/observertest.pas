@@ -14,7 +14,6 @@ type
   TMyObserver = class(TObject, IFPObserver)
   private
     fName: string;
-    procedure Update(const Subject: TObject); virtual; abstract;
     procedure FPOObservedChanged(ASender : TObject; Operation : TFPObservedOperation; Data : Pointer);
   published
     property name: string read fName write fName;
@@ -26,21 +25,24 @@ type
   fController: TObject;
   fObservers: TObjectList;
   public
-  constructor Create(const Controller: TObject);
-  procedure Attach(const Observer: TMyObserver);
-  procedure Detach(const Observer: TMyObserver);
-  procedure Notify;
+    constructor Create(const Controller: TObject);
+    procedure Attach(const Observer: TMyObserver);
+    procedure Detach(const Observer: TMyObserver);
+    procedure Notify;
+  published
+    property Observers: TObjectList read fObservers;
   end;
 
   { TForm1 }
 
   TForm1 = class(TForm)
-    bAdd: TButton;
     bAddObserver: TButton;
     bRemoveObserver: TButton;
-    eItem: TEdit;
-    lbObserved: TListBox;
+    eObserver: TEdit;
     lbLog: TListBox;
+    procedure bAddObserverClick(Sender: TObject);
+    procedure bRemoveObserverClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
 
   public
@@ -49,10 +51,44 @@ type
 
 var
   Form1: TForm1;
-
+  Subject: TMySubject;
 implementation
 
 {$R *.lfm}
+
+{ TForm1 }
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  Subject:=TMySubject.Create(self);
+  lbLog.items.Add('Subject created with no observers');
+end;
+
+procedure TForm1.bAddObserverClick(Sender: TObject);
+var
+  newObserver:TMyObserver;
+begin
+  newObserver:=TMyObserver.Create;
+  newObserver.name:=eObserver.text;
+  Form1.lbLog.items.add('Attaching observer '+ newObserver.name);
+  Subject.Attach(newObserver);
+  Form1.lbLog.items.add('Observer count is now '+inttostr(Subject.Observers.Count));
+end;
+
+procedure TForm1.bRemoveObserverClick(Sender: TObject);
+var
+  observers: TObjectList;
+  observer: TMyObserver;
+begin
+  observers:=subject.Observers;
+  if (observers.Count > 0) then
+    begin
+      observer:=observers[0] as TMyObserver;
+      Form1.lbLog.items.add('Detatching Observer '+observer.name);
+      subject.Detach(observer);
+      Form1.lbLog.items.add('Observer count is now '+inttostr(Subject.Observers.Count));
+    end;
+end;
 
 { TMyObserver }
 
@@ -61,8 +97,7 @@ procedure TMyObserver.FPOObservedChanged(ASender: TObject;
 
 function OperationToString(AOperation: TFPObservedOperation): string;
   begin
-    result := GetEnumName(TypeInfo(TFPObservedOperation),
-                         Ord(AOperation));
+    result := GetEnumName(TypeInfo(TFPObservedOperation), Ord(AOperation));
   end;
 
 var
@@ -109,16 +144,20 @@ end;
 end;
 end;
 
+
 procedure TMySubject.Notify;
 var
 i: Integer;
+dataPtr: ^string;
+data: String;
 begin
+data:='Random data';
+dataPtr:= ^data;
 if fObservers <> nil then
 for i := 0 to Pred(fObservers.Count) do
-TMyObserver(fObservers[i]).Update(fController);
+TMyObserver(fObservers[i]).FPOObservedChanged(fController, TFPObservedOperation.ooChange, dataPtr);
 end;
 
-{ TForm1 }
 
 end.
 

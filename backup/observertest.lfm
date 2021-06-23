@@ -1,43 +1,20 @@
 object Form1: TForm1
-  Left = 881
+  Left = 450
   Height = 509
-  Top = 332
+  Top = 283
   Width = 785
   Caption = 'Form1'
   ClientHeight = 509
   ClientWidth = 785
+  OnShow = FormShow
   LCLVersion = '2.0.12.0'
-  object lbObserved: TListBox
-    Left = 82
-    Height = 316
-    Top = 84
-    Width = 214
-    ItemHeight = 0
-    TabOrder = 0
-  end
   object lbLog: TListBox
     Left = 328
     Height = 316
     Top = 84
     Width = 412
     ItemHeight = 0
-    TabOrder = 1
-  end
-  object bAdd: TButton
-    Left = 221
-    Height = 25
-    Top = 412
-    Width = 75
-    Caption = 'Add'
-    TabOrder = 2
-  end
-  object eItem: TEdit
-    Left = 82
-    Height = 22
-    Top = 412
-    Width = 134
-    TabOrder = 3
-    Text = 'eItem'
+    TabOrder = 0
   end
   object bAddObserver: TButton
     Left = 632
@@ -45,7 +22,8 @@ object Form1: TForm1
     Top = 412
     Width = 107
     Caption = 'Add observer'
-    TabOrder = 4
+    OnClick = bAddObserverClick
+    TabOrder = 1
   end
   object bRemoveObserver: TButton
     Left = 328
@@ -53,6 +31,14 @@ object Form1: TForm1
     Top = 412
     Width = 139
     Caption = 'Remove observer'
-    TabOrder = 5
+    OnClick = bRemoveObserverClick
+    TabOrder = 2
+  end
+  object eObserver: TEdit
+    Left = 632
+    Height = 22
+    Top = 448
+    Width = 80
+    TabOrder = 3
   end
 end
