@@ -38,10 +38,14 @@ type
   TForm1 = class(TForm)
     bAddObserver: TButton;
     bRemoveObserver: TButton;
+    bNotify: TButton;
+    Button1: TButton;
     eObserver: TEdit;
     lbLog: TListBox;
     procedure bAddObserverClick(Sender: TObject);
+    procedure bNotifyClick(Sender: TObject);
     procedure bRemoveObserverClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
 
@@ -75,20 +79,45 @@ begin
   Form1.lbLog.items.add('Observer count is now '+inttostr(Subject.Observers.Count));
 end;
 
+procedure TForm1.bNotifyClick(Sender: TObject);
+begin
+  Subject.Notify;
+end;
+
 procedure TForm1.bRemoveObserverClick(Sender: TObject);
 var
   observers: TObjectList;
   observer: TMyObserver;
 begin
-  observers:=subject.Observers;
-  if (observers.Count > 0) then
+  Form1.lbLog.items.add('Remove observer');
+  if (subject <> nil) and (subject.Observers <> nil) then
     begin
-      observer:=observers[0] as TMyObserver;
-      Form1.lbLog.items.add('Detatching Observer '+observer.name);
-      subject.Detach(observer);
-      Form1.lbLog.items.add('Observer count is now '+inttostr(Subject.Observers.Count));
+    observers:=subject.Observers;
+    if (observers <> nil) and (observers.Count > 0) then
+      begin
+        observer:=observers[0] as TMyObserver;
+        subject.Detach(observer);
+      end;
     end;
 end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  observers: TObjectList;
+  observer: TMyObserver;
+begin
+  Form1.lbLog.items.add('Remove observer');
+  if (subject <> nil) and (subject.Observers <> nil) then
+    begin
+    observers:=subject.Observers;
+    if (observers <> nil) and (observers.Count > 0) then
+      begin
+        observer:=observers[0] as TMyObserver;
+        subject.Detach(observer);
+      end;
+    end;
+end;
+
 
 { TMyObserver }
 
@@ -133,15 +162,17 @@ end;
 
 procedure TMySubject.Detach(const Observer: TMyObserver);
 begin
-if fObservers <> nil then
-begin
-fObservers.Remove(Observer);
-if fObservers.Count = 0 then
-begin
-fObservers.Free;
-fObservers := nil;
-end;
-end;
+  if fObservers <> nil then
+  begin
+    Form1.lbLog.items.add('There are '+inttostr(fObservers.Count)+' observers ');
+    fObservers.Remove(Observer);
+    if fObservers.Count = 0 then
+    begin
+      Form1.lbLog.items.add('Freeing observer list');
+      fObservers.Free;
+      fObservers := nil;
+    end;
+  end;
 end;
 
 
@@ -152,7 +183,7 @@ dataPtr: ^string;
 data: String;
 begin
 data:='Random data';
-dataPtr:= ^data;
+dataPtr:= @data;
 if fObservers <> nil then
 for i := 0 to Pred(fObservers.Count) do
 TMyObserver(fObservers[i]).FPOObservedChanged(fController, TFPObservedOperation.ooChange, dataPtr);

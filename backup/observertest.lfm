@@ -41,4 +41,22 @@ object Form1: TForm1
     Width = 80
     TabOrder = 3
   end
+  object bNotify: TButton
+    Left = 208
+    Height = 25
+    Top = 412
+    Width = 75
+    Caption = 'Notify'
+    OnClick = bNotifyClick
+    TabOrder = 4
+  end
+  object Button1: TButton
+    Left = 211
+    Height = 25
+    Top = 354
+    Width = 75
+    Caption = 'Button1'
+    OnClick = Button1Click
+    TabOrder = 5
+  end
 end
