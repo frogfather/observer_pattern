@@ -14,6 +14,7 @@ type
   TMyObserver = class(TObject, IFPObserver)
   private
     fName: string;
+    procedure Update(const Subject: TObject); virtual; abstract;
     procedure FPOObservedChanged(ASender : TObject; Operation : TFPObservedOperation; Data : Pointer);
   published
     property name: string read fName write fName;
@@ -34,6 +35,7 @@ type
   end;
 
   { TWatchedClass }
+  //A class that has a TMySubject field
   TWatchedClass = class
   private
     fVariable: integer;
@@ -45,6 +47,13 @@ type
   published
     property subject: TMySubject read fSubject;
     property variable: integer read fVariable write setVariable;
+  end;
+
+  { TObservingClass }
+  //Implements the abstract update method
+  TObservingClass = class(TMyObserver)
+  private
+    procedure Update(const Subject: TObject) override;
   end;
 
   { TForm1 }
@@ -72,6 +81,23 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TObservingClass }
+
+procedure TObservingClass.Update(const Subject: TObject);
+var
+  vInt:integer;
+  pVInt: ^integer;
+begin
+  if subject is TWatchedClass then with subject as TWatchedClass do
+    begin
+      form1.lbLog.items.add('Value changed to '+inttostr(variable));
+      //get the variable and a pointer to it
+      vInt := variable;
+      pVInt := @vInt;
+      FPOObservedChanged(subject, TFPObservedOperation.ooChange, pVint);
+    end;
+end;
 
 { TWatchedClass }
 
@@ -111,9 +137,9 @@ end;
 
 procedure TForm1.bAddObserverClick(Sender: TObject);
 var
-  newObserver:TMyObserver;
+  newObserver:TObservingClass;
 begin
-  newObserver:=TMyObserver.Create;
+  newObserver:=TObservingClass.Create;
   newObserver.name:=eObserver.text;
   Form1.lbLog.items.add('Attaching observer '+ newObserver.name);
   watchedObject.subject.Attach(newObserver);
@@ -124,7 +150,7 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 var
   observers: TObjectList;
-  observer: TMyObserver;
+  observer: TObservingClass;
 begin
   Form1.lbLog.items.add('Remove observer');
   if (watchedObject <> nil) and (watchedObject.subject.Observers <> nil) then
@@ -132,7 +158,7 @@ begin
     observers:=watchedObject.subject.Observers;
     if (observers <> nil) and (observers.Count > 0) then
       begin
-        observer:=observers[0] as TMyObserver;
+        observer:=observers[0] as TObservingClass;
         watchedObject.subject.Detach(observer);
       end;
     end;
@@ -184,8 +210,8 @@ procedure TMySubject.Detach(const Observer: TMyObserver);
 begin
   if fObservers <> nil then
   begin
-    Form1.lbLog.items.add('There are '+inttostr(fObservers.Count)+' observers ');
     fObservers.Remove(Observer);
+    Form1.lbLog.items.add('There are '+inttostr(fObservers.Count)+' observers ');
     if fObservers.Count = 0 then
     begin
       Form1.lbLog.items.add('Freeing observer list');
@@ -199,14 +225,10 @@ end;
 procedure TMySubject.Notify;
 var
 i: Integer;
-data: integer;
-dataPtr: pointer;
 begin
-data:=1;
-dataPtr:=@data;
 if fObservers <> nil then
 for i := 0 to Pred(fObservers.Count) do
-TMyObserver(fObservers[i]).FPOObservedChanged(fController, TFPObservedOperation.ooChange, dataPtr);
+TMyObserver(fObservers[i]).Update(fController);
 end;
 
 
