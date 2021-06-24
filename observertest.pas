@@ -10,65 +10,64 @@ uses
 
 type
 
-  { TMyObserver }
-  TMyObserver = class(TObject, IFPObserver)
-  private
-    fName: string;
-    procedure Update(const Subject: TObject); virtual; abstract;
-    procedure FPOObservedChanged(ASender : TObject; Operation : TFPObservedOperation; Data : Pointer);
-  published
-    property name: string read fName write fName;
+  IObserver = interface
+  ['{a4350679-517f-4c72-b3f8-5cf7abfdf2be}']
+    procedure Update(Subject: IInterface);
   end;
 
-  { TMySubject }
-  TMySubject = class
+  ISubject = interface
+  ['{18dbf567-b454-418e-b3dd-d076eb395837}']
+  procedure Attach(Observer: IObserver);
+  procedure Detach(Observer: IObserver);
+  procedure Notify;
+  end;
+
+  IClockTimer = interface
+  ['{826ea8f8-133f-4d6d-a03d-aa055fe2dff7}']
+  function GetTime: TDateTime;
+  end;
+
+  TSubject = class(TInterfacedObject, ISubject)
   private
-  fController: TObject;
-  fObservers: TObjectList;
-  public
-    constructor Create(const Controller: TObject);
-    procedure Attach(const Observer: TMyObserver);
-    procedure Detach(const Observer: TMyObserver);
+    fController: Pointer;
+    fObservers: IInterfaceList;
+    procedure Attach(Observer: IObserver);
+    procedure Detach(Observer: IObserver);
     procedure Notify;
-  published
-    property Observers: TObjectList read fObservers;
+  public
+    constructor Create(const Controller: IInterface);
   end;
 
-  { TWatchedClass }
-  //A class that has a TMySubject field
-  TWatchedClass = class
+  TClockTimer = class(TInterfacedObject, IClockTimer, ISubject)
   private
-    fVariable: integer;
-    fSubject: TMySubject;
+    fTimer: TTimer;
+    fInternalTime: TDateTime;
+    fSubject: ISubject;
+    function GetTime: TDateTime;
+    procedure Tick(Sender: TObject);
+    property Subject: ISubject read fSubject implements ISubject;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure setVariable(variable: integer);
-  published
-    property subject: TMySubject read fSubject;
-    property variable: integer read fVariable write setVariable;
   end;
 
-  { TObservingClass }
-  //Implements the abstract update method
-  TObservingClass = class(TMyObserver)
-  private
-    procedure Update(const Subject: TObject) override;
+  { TMyObserver }
+  TMyObserver = class(TInterfacedObject, IObserver)
+    private
+    procedure Update(subject: IInterface);
+    public
+    constructor create;
+    destructor destroy; override;
   end;
 
   { TForm1 }
 
   TForm1 = class(TForm)
-    bAddObserver: TButton;
-    Button1: TButton;
-    eObserver: TEdit;
+    bAdd: TButton;
+    bRemove: TButton;
     lbLog: TListBox;
-    me1: TMaskEdit;
-    UpDown1: TUpDown;
-    procedure bAddObserverClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
-    procedure FormShow(Sender: TObject);
-    procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
+    procedure bAddClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
 
   public
@@ -77,159 +76,117 @@ type
 
 var
   Form1: TForm1;
-  watchedObject: TWatchedClass;
+  fClockTimer: TClockTimer;
 implementation
 
 {$R *.lfm}
 
-{ TObservingClass }
-
-procedure TObservingClass.Update(const Subject: TObject);
-var
-  vInt:integer;
-  pVInt: ^integer;
-begin
-  if subject is TWatchedClass then with subject as TWatchedClass do
-    begin
-      form1.lbLog.items.add('Value changed to '+inttostr(variable));
-      //get the variable and a pointer to it
-      vInt := variable;
-      pVInt := @vInt;
-      FPOObservedChanged(subject, TFPObservedOperation.ooChange, pVint);
-    end;
-end;
-
-{ TWatchedClass }
-
-constructor TWatchedClass.Create;
-begin
-  inherited Create;
-  fSubject:=TMySubject.Create(self);
-end;
-
-destructor TWatchedClass.Destroy;
-begin
-  fSubject.Free;
-  inherited Destroy;
-end;
-
-procedure TWatchedClass.setVariable(variable: integer);
-begin
-  fVariable:= variable;
-  fSubject.Notify;
-end;
-
-
-
 { TForm1 }
 
-procedure TForm1.FormShow(Sender: TObject);
+procedure TForm1.FormCreate(Sender: TObject);
 begin
-  watchedObject:=TWatchedClass.Create;
-  lbLog.items.Add('Watched object created with no observers');
+    fClockTimer := TClockTimer.Create;
+    fClockTimer._AddRef;
 end;
 
-procedure TForm1.UpDown1Click(Sender: TObject; Button: TUDBtnType);
-begin
-  me1.Text:=inttostr(upDown1.Position);
-  watchedObject.setVariable(upDown1.Position);
-end;
-
-procedure TForm1.bAddObserverClick(Sender: TObject);
+procedure TForm1.bAddClick(Sender: TObject);
 var
-  newObserver:TObservingClass;
+  newObserver:IObserver;
 begin
-  newObserver:=TObservingClass.Create;
-  newObserver.name:=eObserver.text;
-  Form1.lbLog.items.add('Attaching observer '+ newObserver.name);
-  watchedObject.subject.Attach(newObserver);
-  Form1.lbLog.items.add('Observer count is now '+inttostr(watchedObject.subject.Observers.Count));
+  newObserver:=TMyObserver.create;
+  fClockTimer.Subject.Attach(newObserver);
 end;
-
-
-procedure TForm1.Button1Click(Sender: TObject);
-var
-  observers: TObjectList;
-  observer: TObservingClass;
-begin
-  Form1.lbLog.items.add('Remove observer');
-  if (watchedObject <> nil) and (watchedObject.subject.Observers <> nil) then
-    begin
-    observers:=watchedObject.subject.Observers;
-    if (observers <> nil) and (observers.Count > 0) then
-      begin
-        observer:=observers[0] as TObservingClass;
-        watchedObject.subject.Detach(observer);
-      end;
-    end;
-end;
-
 
 { TMyObserver }
 
-procedure TMyObserver.FPOObservedChanged(ASender: TObject;
-  Operation: TFPObservedOperation; Data: Pointer);
-
-function OperationToString(AOperation: TFPObservedOperation): string;
-  begin
-    result := GetEnumName(TypeInfo(TFPObservedOperation), Ord(AOperation));
-  end;
-
+procedure TMyObserver.Update(subject: IInterface);
 var
-  intf: IFPObserved;
+Obj: IClockTimer;
 begin
-  if Operation = ooFree then
-  begin
-    Form1.lbLog.items.add('[ooFree] detected so we should detach ourselves');
-    if Supports(ASender, IFPObserved, intf) then
-      intf.FPODetachObserver(self);
-  end
-  else
-  begin
-    Form1.lbLog.items.add(self.name+': '+ASender.ClassName + ' has changed ['+ OperationToString(Operation) + ']');
-  end;
+Subject.QueryInterface(IClockTimer, Obj);
+if Obj <> nil then
+Form1.lbLog.items.add(FormatDateTime('tt', Obj.GetTime));
 end;
 
-{ TMySubject }
-
-constructor TMySubject.Create(const Controller: TObject);
+constructor TMyObserver.create;
 begin
+
+end;
+
+destructor TMyObserver.destroy;
+begin
+
+end;
+
+{ TSubject }
+
+constructor TSubject.Create(const Controller: IInterface);
+begin
+  form1.lbLog.items.add('Create instance of TSubject');
   inherited Create;
-    fController := Controller;
+  fController := Pointer(Controller);
 end;
 
-procedure TMySubject.Attach(const Observer: TMyObserver);
+procedure TSubject.Attach(Observer: IObserver);
 begin
+form1.lbLog.items.add('TSubject.attach called');
 if fObservers = nil then
-fObservers := TObjectList.Create;
-if fObservers.IndexOf(Observer) < 0 then
+fObservers := TInterfaceList.Create;
 fObservers.Add(Observer);
 end;
 
-procedure TMySubject.Detach(const Observer: TMyObserver);
+procedure TSubject.Detach(Observer: IObserver);
 begin
-  if fObservers <> nil then
+form1.lbLog.items.add('TSubject.detach called');
+if fObservers <> nil then
   begin
-    fObservers.Remove(Observer);
-    Form1.lbLog.items.add('There are '+inttostr(fObservers.Count)+' observers ');
-    if fObservers.Count = 0 then
-    begin
-      Form1.lbLog.items.add('Freeing observer list');
-      fObservers.Free;
-      fObservers := nil;
-    end;
+  fObservers.Remove(Observer);
+  if fObservers.Count = 0 then
+  fObservers := nil;
   end;
 end;
 
-
-procedure TMySubject.Notify;
+procedure TSubject.Notify;
 var
 i: Integer;
 begin
-if fObservers <> nil then
-for i := 0 to Pred(fObservers.Count) do
-TMyObserver(fObservers[i]).Update(fController);
+  if fObservers <> nil then
+  for i := 0 to Pred(fObservers.Count) do
+  (fObservers[i] as IObserver).Update(IInterface (fController));
 end;
+
+{ TClockTimer }
+
+procedure TClockTimer.Tick(Sender: TObject);
+begin
+  fInternalTime := Now;
+  fSubject.Notify;
+end;
+
+constructor TClockTimer.Create;
+begin
+  form1.lbLog.items.add('Create instance of TClock timer');
+  inherited create;
+  fSubject:=TSubject.Create(self);
+  fTimer:=TTimer.Create(nil);
+  //We set the OnTimer event of fTimer to a pointer to the tick method
+  fTimer.OnTimer:=@Tick;
+  fTimer.Enabled:=true;
+end;
+
+destructor TClockTimer.Destroy;
+begin
+  form1.lbLog.items.add('destroy TClockTimer');
+  fTimer.Enabled := False;
+  fTimer.Free;
+    inherited Destroy;
+end;
+
+function TClockTimer.GetTime: TDateTime;
+begin
+  Result := fInternalTime;
+end;
+
 
 
 end.

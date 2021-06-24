@@ -6,7 +6,7 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 509
   ClientWidth = 785
-  OnShow = FormShow
+  OnCreate = FormCreate
   LCLVersion = '2.0.12.0'
   object lbLog: TListBox
     Left = 328
@@ -16,51 +16,21 @@ object Form1: TForm1
     ItemHeight = 0
     TabOrder = 0
   end
-  object bAddObserver: TButton
-    Left = 632
+  object bAdd: TButton
+    Left = 600
     Height = 25
-    Top = 412
-    Width = 107
+    Top = 408
+    Width = 139
     Caption = 'Add observer'
-    OnClick = bAddObserverClick
+    OnClick = bAddClick
     TabOrder = 1
   end
-  object eObserver: TEdit
-    Left = 632
-    Height = 22
-    Top = 448
-    Width = 80
-    TabOrder = 2
-  end
-  object Button1: TButton
+  object bRemove: TButton
     Left = 328
     Height = 25
     Top = 408
-    Width = 75
-    Caption = 'Remove Observer'
-    OnClick = Button1Click
-    TabOrder = 3
-  end
-  object UpDown1: TUpDown
-    Left = 568
-    Height = 31
-    Top = 408
-    Width = 17
-    Min = 0
-    OnClick = UpDown1Click
-    Position = 0
-    TabOrder = 4
-  end
-  object me1: TMaskEdit
-    Left = 488
-    Height = 22
-    Top = 415
-    Width = 80
-    CharCase = ecNormal
-    MaxLength = 2
-    TabOrder = 5
-    EditMask = '00;1;_'
-    Text = '  '
-    SpaceChar = '_'
+    Width = 184
+    Caption = 'Remove observer'
+    TabOrder = 2
   end
 end
