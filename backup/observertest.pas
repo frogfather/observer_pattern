@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Menus,
-  ExtCtrls, Contnrs, typinfo;
+  ExtCtrls, ComCtrls, MaskEdit, Contnrs, typinfo;
 
 type
 
@@ -33,20 +33,33 @@ type
     property Observers: TObjectList read fObservers;
   end;
 
+  { TWatchedClass }
+  TWatchedClass = class
+  private
+    fVariable: integer;
+    fSubject: TMySubject;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure setVariable(variable: integer);
+  published
+    property subject: TMySubject read fSubject;
+    property variable: integer read fVariable write setVariable;
+  end;
+
   { TForm1 }
 
   TForm1 = class(TForm)
     bAddObserver: TButton;
-    bRemoveObserver: TButton;
-    bNotify: TButton;
     Button1: TButton;
     eObserver: TEdit;
     lbLog: TListBox;
+    me1: TMaskEdit;
+    UpDown1: TUpDown;
     procedure bAddObserverClick(Sender: TObject);
-    procedure bNotifyClick(Sender: TObject);
-    procedure bRemoveObserverClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
   private
 
   public
@@ -55,17 +68,44 @@ type
 
 var
   Form1: TForm1;
-  Subject: TMySubject;
+  watchedObject: TWatchedClass;
 implementation
 
 {$R *.lfm}
+
+{ TWatchedClass }
+
+constructor TWatchedClass.Create;
+begin
+  inherited Create;
+  fSubject:=TMySubject.Create(self);
+end;
+
+destructor TWatchedClass.Destroy;
+begin
+  fSubject.Free;
+  inherited Destroy;
+end;
+
+procedure TWatchedClass.setVariable(variable: integer);
+begin
+  fVariable:= variable;
+  fSubject.Notify;
+end;
+
+
 
 { TForm1 }
 
 procedure TForm1.FormShow(Sender: TObject);
 begin
-  Subject:=TMySubject.Create(self);
-  lbLog.items.Add('Subject created with no observers');
+  watchedObject:=TWatchedClass.Create;
+  lbLog.items.Add('Watched object created with no observers');
+end;
+
+procedure TForm1.UpDown1Click(Sender: TObject; Button: TUDBtnType);
+begin
+  me1.Text:=inttostr(upDown1.Position);
 end;
 
 procedure TForm1.bAddObserverClick(Sender: TObject);
@@ -75,31 +115,10 @@ begin
   newObserver:=TMyObserver.Create;
   newObserver.name:=eObserver.text;
   Form1.lbLog.items.add('Attaching observer '+ newObserver.name);
-  Subject.Attach(newObserver);
-  Form1.lbLog.items.add('Observer count is now '+inttostr(Subject.Observers.Count));
+  watchedObject.subject.Attach(newObserver);
+  Form1.lbLog.items.add('Observer count is now '+inttostr(watchedObject.subject.Observers.Count));
 end;
 
-procedure TForm1.bNotifyClick(Sender: TObject);
-begin
-  Subject.Notify;
-end;
-
-procedure TForm1.bRemoveObserverClick(Sender: TObject);
-var
-  observers: TObjectList;
-  observer: TMyObserver;
-begin
-  Form1.lbLog.items.add('Remove observer');
-  if (subject <> nil) and (subject.Observers <> nil) then
-    begin
-    observers:=subject.Observers;
-    if (observers <> nil) and (observers.Count > 0) then
-      begin
-        observer:=observers[0] as TMyObserver;
-        subject.Detach(observer);
-      end;
-    end;
-end;
 
 procedure TForm1.Button1Click(Sender: TObject);
 var
@@ -107,13 +126,13 @@ var
   observer: TMyObserver;
 begin
   Form1.lbLog.items.add('Remove observer');
-  if (subject <> nil) and (subject.Observers <> nil) then
+  if (watchedObject <> nil) and (watchedObject.subject.Observers <> nil) then
     begin
-    observers:=subject.Observers;
+    observers:=watchedObject.subject.Observers;
     if (observers <> nil) and (observers.Count > 0) then
       begin
         observer:=observers[0] as TMyObserver;
-        subject.Detach(observer);
+        watchedObject.subject.Detach(observer);
       end;
     end;
 end;
@@ -179,11 +198,11 @@ end;
 procedure TMySubject.Notify;
 var
 i: Integer;
-dataPtr: ^string;
-data: String;
+data: integer;
+dataPtr: pointer;
 begin
-data:='Random data';
-dataPtr:= @data;
+data:=1;
+dataPtr:=@data;
 if fObservers <> nil then
 for i := 0 to Pred(fObservers.Count) do
 TMyObserver(fObservers[i]).FPOObservedChanged(fController, TFPObservedOperation.ooChange, dataPtr);

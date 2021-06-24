@@ -32,15 +32,6 @@ object Form1: TForm1
     Width = 80
     TabOrder = 2
   end
-  object bNotify: TButton
-    Left = 208
-    Height = 25
-    Top = 412
-    Width = 75
-    Caption = 'Notify'
-    OnClick = bNotifyClick
-    TabOrder = 3
-  end
   object Button1: TButton
     Left = 328
     Height = 25
@@ -48,6 +39,28 @@ object Form1: TForm1
     Width = 75
     Caption = 'Remove Observer'
     OnClick = Button1Click
+    TabOrder = 3
+  end
+  object UpDown1: TUpDown
+    Left = 568
+    Height = 31
+    Top = 408
+    Width = 17
+    Min = 0
+    OnClick = UpDown1Click
+    Position = 0
     TabOrder = 4
+  end
+  object me1: TMaskEdit
+    Left = 488
+    Height = 22
+    Top = 415
+    Width = 80
+    CharCase = ecNormal
+    MaxLength = 2
+    TabOrder = 5
+    EditMask = '00;1;_'
+    Text = '  '
+    SpaceChar = '_'
   end
 end
