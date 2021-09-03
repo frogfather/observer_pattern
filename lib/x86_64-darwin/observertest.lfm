@@ -31,6 +31,14 @@ object Form1: TForm1
     Top = 408
     Width = 184
     Caption = 'Remove observer'
+    OnClick = bRemoveClick
     TabOrder = 2
+  end
+  object eObserverName: TEdit
+    Left = 464
+    Height = 22
+    Top = 448
+    Width = 179
+    TabOrder = 3
   end
 end

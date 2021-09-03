@@ -20,12 +20,16 @@ type
   procedure Attach(Observer: IObserver);
   procedure Detach(Observer: IObserver);
   procedure Notify;
+  function ObserverCount: integer;
+  function GetObserverByName(name: string): IObserver;
   end;
 
   IClockTimer = interface
   ['{826ea8f8-133f-4d6d-a03d-aa055fe2dff7}']
   function GetTime: TDateTime;
   end;
+
+  { TSubject }
 
   TSubject = class(TInterfacedObject, ISubject)
   private
@@ -35,6 +39,8 @@ type
     procedure Detach(Observer: IObserver);
     procedure Notify;
   public
+    function ObserverCount: integer;
+    function getObserverByName(name: string): IObserver;
     constructor Create(const Controller: IInterface);
   end;
 
@@ -54,10 +60,12 @@ type
   { TMyObserver }
   TMyObserver = class(TInterfacedObject, IObserver)
     private
+      fName: string;
     procedure Update(subject: IInterface);
     public
-    constructor create;
+    constructor create(name:String);
     destructor destroy; override;
+    property oName: string read fName;
   end;
 
   { TForm1 }
@@ -65,8 +73,10 @@ type
   TForm1 = class(TForm)
     bAdd: TButton;
     bRemove: TButton;
+    eObserverName: TEdit;
     lbLog: TListBox;
     procedure bAddClick(Sender: TObject);
+    procedure bRemoveClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
 
@@ -92,9 +102,23 @@ end;
 procedure TForm1.bAddClick(Sender: TObject);
 var
   newObserver:IObserver;
+  observerCount:integer;
 begin
-  newObserver:=TMyObserver.create;
+  observerCount := fClockTimer.Subject.ObserverCount;
+  newObserver:=TMyObserver.create('Obs '+intToStr(observerCount + 1));
   fClockTimer.Subject.Attach(newObserver);
+end;
+
+procedure TForm1.bRemoveClick(Sender: TObject);
+var
+  selected: IObserver;
+begin
+  //remove observer with name specified
+  selected:=fClockTimer.Subject.GetObserverByName(eObserverName.Text);
+  if (selected <> nil) and (selected is TMyObserver) then
+    begin
+    fClockTimer.Subject.Detach(selected);
+    end;
 end;
 
 { TMyObserver }
@@ -105,12 +129,12 @@ Obj: IClockTimer;
 begin
 Subject.QueryInterface(IClockTimer, Obj);
 if Obj <> nil then
-Form1.lbLog.items.add(FormatDateTime('tt', Obj.GetTime));
+Form1.lbLog.items.add('Observer '+oName+': '+FormatDateTime('tt', Obj.GetTime));
 end;
 
-constructor TMyObserver.create;
+constructor TMyObserver.create(name: string);
 begin
-
+ fName:=name;
 end;
 
 destructor TMyObserver.destroy;
@@ -155,6 +179,26 @@ begin
   (fObservers[i] as IObserver).Update(IInterface (fController));
 end;
 
+function TSubject.ObserverCount: integer;
+begin
+  if (fObservers = nil) then result:=0 else result := fObservers.Count;
+end;
+
+function TSubject.getObserverByName(name: string): IObserver;
+var
+i:integer;
+begin
+  if (fObservers <> nil) and (fObservers.Count > 0) then for i:= 0 to Pred(fObservers.Count) do
+    begin
+    if (fObservers[i] as TMyObserver).oName = name then
+      begin
+      result:=fObservers[i] as TMyObserver;
+      exit;
+      end;
+    end;
+  result := nil;
+end;
+
 { TClockTimer }
 
 procedure TClockTimer.Tick(Sender: TObject);
@@ -167,7 +211,7 @@ constructor TClockTimer.Create;
 begin
   form1.lbLog.items.add('Create instance of TClock timer');
   inherited create;
-  fSubject:=TSubject.Create();
+  fSubject:=TSubject.Create(self);
   fTimer:=TTimer.Create(nil);
   //We set the OnTimer event of fTimer to a pointer to the tick method
   fTimer.OnTimer:=@Tick;
