@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="/usr/local/bin/fpc" Date="1590953228"/>
+  <Params Value=" -MObjFPC -Scghi -O1 -gw -gl -l -vewnhibq -Fu/Applications/Lazarus/packager/units/x86_64-darwin -Fu/Applications/Lazarus/components/lazutils/lib/x86_64-darwin -Fu/Applications/Lazarus/lcl/units/x86_64-darwin -Fu/Users/johnPersonal/.lazarus/lib/units/x86_64-darwin/cocoa -Fu/Users/johnPersonal/.lazarus/lib/LazControls/lib/x86_64-darwin/cocoa -Fu/Users/johnPersonal/.lazarus/lib/IDEIntf/units/x86_64-darwin/cocoa -Fu/Users/johnPersonal/Documents/code/observer_form/ -FU/Users/johnPersonal/Documents/code/observer_form/lib/x86_64-darwin/ -dLCL -dLCLcocoa digital_clock.pas"/>
+  <Complete Value="False" MainPPUExists="False"/>
+</CONFIG>

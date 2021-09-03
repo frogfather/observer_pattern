@@ -150,7 +150,6 @@ procedure TSubject.Notify;
 var
 i: Integer;
 begin
-  form1.lbLog.items.add('TSubject.notify called');
   if fObservers <> nil then
   for i := 0 to Pred(fObservers.Count) do
   (fObservers[i] as IObserver).Update(IInterface (fController));
@@ -168,7 +167,7 @@ constructor TClockTimer.Create;
 begin
   form1.lbLog.items.add('Create instance of TClock timer');
   inherited create;
-  fSubject:=TSubject.Create(self);
+  fSubject:=TSubject.Create();
   fTimer:=TTimer.Create(nil);
   //We set the OnTimer event of fTimer to a pointer to the tick method
   fTimer.OnTimer:=@Tick;
